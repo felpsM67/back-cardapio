@@ -1845,5 +1845,8 @@ sequelize
     "PORT": "3000"
   }
 }
-```#   b a c k - c a r d a p i o  
- 
+```
+## Ajustes da integração sem localStorage
+
+- `POST /api/pedidos` é público para permitir que o cardápio finalize um pedido sem autenticação administrativa.
+- Rotas com parâmetros foram ajustadas para a sintaxe compatível com Express 5 (`/:id`).

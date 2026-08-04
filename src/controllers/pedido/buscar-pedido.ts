@@ -6,7 +6,10 @@ export class BuscarPedidoController implements Controller {
   async handle(httpRequest: HttpRequest): Promise<HttpResponse> {
     try {
       const pedidoService = new PedidoService();
-      const pedido = await pedidoService.getPedidoById(httpRequest?.params.id);
+      const pedido =
+  await pedidoService.buscar(
+    Number(httpRequest.params?.id),
+  );
       return ok(pedido);
     } catch (error: any) {
       return serverError(error);

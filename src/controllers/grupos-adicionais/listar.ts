@@ -1,0 +1,1 @@
+import {ok,serverError} from "@/helpers/http-helper";import {Controller,HttpRequest,HttpResponse} from "@/protocols";import grupoService from "@/service/grupo-adicional-service";export default class ListarController implements Controller{async handle(_r:HttpRequest):Promise<HttpResponse>{try{return ok(await grupoService.listar());}catch(e){return serverError(e);}}}

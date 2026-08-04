@@ -1,0 +1,1 @@
+import {Router} from "express";import adaptRoute from "@/adapters/express-route-adapter";import Controller from "@/controllers/grupos-adicionais/criar";import {authMiddleware,authorizeRoles} from "@/middlewares";export default(router:Router):void=>{router.post("/grupos-adicionais",authMiddleware,authorizeRoles(["Gerente"]),adaptRoute(new Controller()));};

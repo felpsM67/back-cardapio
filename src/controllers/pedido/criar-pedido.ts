@@ -8,7 +8,10 @@ export class CriarPedidoController implements Controller {
     try {
       const pedidoService = new PedidoService();
       const pedidoData: CreatePedidoDTO = httpRequest.body;
-      const novoPedido = await pedidoService.createPedido(pedidoData);
+      const novoPedido =
+  await pedidoService.criar(
+    pedidoData,
+  );
       return created(novoPedido);
     } catch (error: any) {
       return serverError(error);

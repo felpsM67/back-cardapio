@@ -24,22 +24,24 @@ export default class BuscarCargoIdController
 
       if (!Number.isInteger(id) || id <= 0) {
         return badRequest(
-         new Error ("ID do cargo inválido."),
+          new Error("ID do cargo inválido."),
         );
       }
-
 
       const cargo = await cargoService.buscarPorId(id);
 
       return ok(cargo);
-    } catch (error: any) {
-      if (error.message === "Cargo não encontrado.") {
-        return notFound({
-          error: error.message,
-        });
+    } catch (error: unknown) {
+      const erro =
+        error instanceof Error
+          ? error
+          : new Error("Erro interno ao buscar o cargo.");
+
+      if (erro.message === "Cargo não encontrado.") {
+        return notFound(erro);
       }
 
-      return serverError(error);
+      return serverError(erro);
     }
   }
 }

@@ -1,26 +1,4 @@
 import Configuracoes from "@/models/configuracoes-model";
-import { CreateConfiguracoesDTO, UpdateConfiguracoesDTO } from "@/types/configuracoes";
-
-export class ConfiguracoesService {
-
-    async criarConfiguracoes(novasConfiguracoes: CreateConfiguracoesDTO) : Promise<Configuracoes> {
-        return await Configuracoes.create(novasConfiguracoes);
-    }
-    async buscarConfiguracoes(): Promise<Configuracoes[]> {
-        return await Configuracoes.findAll();
-    }
-    async buscarConfiguracoesPorId(id: number): Promise<Configuracoes | null> {
-        return await Configuracoes.findByPk(id);
-    }
-    async atualizarConfiguracoes(id: number, configuracoesAtualizadas: UpdateConfiguracoesDTO): Promise<[number, Configuracoes[]]> {
-        return await Configuracoes.update(configuracoesAtualizadas, {
-            where: { id },
-            returning: true,
-        });
-    }
-    async deletarConfiguracoes(id: number): Promise<number> {
-        return await Configuracoes.destroy({
-            where: { id },
-        });
-    }
-}
+const defaults={nomeLoja:"Minha Loja",descricao:"",numeroLoja:"",chavePix:"",titularPix:"",valorFrete:0,pedidoMinimo:null,slugCardapio:"cardapio",prazoEntrega:"30-45 min",horarioFuncionamento:"Todos os dias",aberto:true,corPrimaria:"#ea580c",capaUrl:""};
+export class ConfiguracoesService {async obter(){const [c]=await Configuracoes.findOrCreate({where:{id:1},defaults:{id:1,...defaults} as any});return c;}async salvar(d:any){const c=await this.obter();await c.update(d);return c;}}
+export default new ConfiguracoesService();

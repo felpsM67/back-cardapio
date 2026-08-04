@@ -1,9 +1,10 @@
-import Entregador from "@/models/entregador-model";
-import { CreateEntregadorDTO } from "@/types/Entregador";
-
+import sequelize from "@/database"; import User from "@/models/user-model"; import Cargo from "@/models/cargo-model"; import Funcionario from "@/models/funcionario-model"; import Entregador from "@/models/entregador-model"; import {BcryptAdapter} from "@/adapters/bcrypt-adapter"; import {ENV} from "@/config/env";
+const include=[{model:Funcionario,as:"funcionario",include:[{model:User,as:"user",attributes:{exclude:["senha"]}},{model:Cargo,as:"cargo"}]}];
 export class EntregadorService {
-
-    async criarEntregador(novoEntregador: CreateEntregadorDTO): Promise<Entregador> {
-        return await Entregador.create(novoEntregador);
-    }
+ async listar(){return Entregador.findAll({include,order:[["createdAt","DESC"]]});}
+ async buscar(id:number){const e=await Entregador.findByPk(id,{include});if(!e)throw new Error("Entregador não encontrado.");return e;}
+ async criar(d:any){return sequelize.transaction(async t=>{if(await User.findOne({where:{email:d.email.toLowerCase()},transaction:t}))throw new Error("Este e-mail já está em uso.");const [cargo]=await Cargo.findOrCreate({where:{nome:"Entregador"},defaults:{nome:"Entregador",descricao:"Acesso à área de entregas",permissoes:["manage_deliveries"],ativo:true},transaction:t});const hash=await new BcryptAdapter(ENV.SALT).hash(d.senha);const user=await User.create({nome:d.nome.trim(),email:d.email.toLowerCase().trim(),senha:hash,role:"Funcionario"},{transaction:t});const f=await Funcionario.create({nome:d.nome.trim(),telefone:d.telefone||null,ativo:d.ativo??true,userId:user.id,cargoId:cargo.id},{transaction:t});const e=await Entregador.create({funcionarioId:f.id,documento:d.documento||null,veiculo:d.veiculo,placa:d.placa||null,disponivel:d.disponivel??true,ativo:d.ativo??true},{transaction:t});return (await Entregador.findByPk(e.id,{include,transaction:t}))!;});}
+ async atualizar(id:number,d:any){return sequelize.transaction(async t=>{const e=await Entregador.findByPk(id,{include:[{model:Funcionario,as:"funcionario",include:[{model:User,as:"user"}]}],transaction:t});if(!e)throw new Error("Entregador não encontrado.");const f=(e as any).funcionario as Funcionario;const u=(f as any).user as User;const ud:any={};if(d.nome)ud.nome=d.nome.trim();if(d.email)ud.email=d.email.toLowerCase().trim();if(d.senha)ud.senha=await new BcryptAdapter(ENV.SALT).hash(d.senha);if(Object.keys(ud).length)await u.update(ud,{transaction:t});await f.update({nome:d.nome?.trim()??f.nome,telefone:d.telefone!==undefined?(d.telefone||null):f.telefone,ativo:d.ativo??f.ativo},{transaction:t});await e.update({documento:d.documento!==undefined?(d.documento||null):e.documento,veiculo:d.veiculo??e.veiculo,placa:d.placa!==undefined?(d.placa||null):e.placa,disponivel:d.disponivel??e.disponivel,ativo:d.ativo??e.ativo},{transaction:t});return (await Entregador.findByPk(id,{include,transaction:t}))!;});}
+ async excluir(id:number){return sequelize.transaction(async t=>{const e=await Entregador.findByPk(id,{transaction:t});if(!e)throw new Error("Entregador não encontrado.");const f=await Funcionario.findByPk(e.funcionarioId,{transaction:t});await e.destroy({transaction:t});if(f){const uid=f.userId;await f.destroy({transaction:t});await User.destroy({where:{id:uid},transaction:t});}});}
 }
+export default new EntregadorService();

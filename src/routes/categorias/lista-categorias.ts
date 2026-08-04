@@ -1,8 +1,1 @@
-import { Router } from "express";
-import adaptRoute from "../../adapters/express-route-adapter";
-import ListaCategoriasController from "@/controllers/categorias/listar-categoria";
-export default (router: Router): void => {
-  router.get("/categorias{/:id}",
-    adaptRoute
-    (new ListaCategoriasController()));
-};
+import {Router} from "express";import adaptRoute from "@/adapters/express-route-adapter";import C from "@/controllers/categorias/listar-categoria";export default(r:Router):void=>{r.get("/categorias",adaptRoute(new C()));r.get("/categorias/:id",adaptRoute(new C()));};

@@ -1,0 +1,75 @@
+=== CICLO 1 ===
+[frontend] TypeScript
+[backend] TypeScript
+
+> base-api-crud-pi-senac-2025@1.0.0 typecheck
+> tsc -p tsconfig.json --noEmit
+
+[backend] Build
+
+> base-api-crud-pi-senac-2025@1.0.0 build
+> NODE_ENV=production tsc -p tsconfig.json && tsc-alias -p tsconfig.json && npm run copy:swagger
+
+
+> base-api-crud-pi-senac-2025@1.0.0 copy:swagger
+> copyfiles -u 2 "src/docs/**/*" dist/docs
+
+[contratos] Frontend x backend
+FRONT_CALLS 39
+BACK_ROUTES 53
+CONTRACTS_OK
+[api] 48 endpoints
+SMOKE_OK 48 endpoints
+[swagger] Parse
+SWAGGER_OK 20 paths
+CICLO_1_OK
+=== CICLO 2 ===
+[frontend] TypeScript
+[backend] TypeScript
+
+> base-api-crud-pi-senac-2025@1.0.0 typecheck
+> tsc -p tsconfig.json --noEmit
+
+[backend] Build
+
+> base-api-crud-pi-senac-2025@1.0.0 build
+> NODE_ENV=production tsc -p tsconfig.json && tsc-alias -p tsconfig.json && npm run copy:swagger
+
+
+> base-api-crud-pi-senac-2025@1.0.0 copy:swagger
+> copyfiles -u 2 "src/docs/**/*" dist/docs
+
+[contratos] Frontend x backend
+FRONT_CALLS 39
+BACK_ROUTES 53
+CONTRACTS_OK
+[api] 48 endpoints
+SMOKE_OK 48 endpoints
+[swagger] Parse
+SWAGGER_OK 20 paths
+CICLO_2_OK
+=== CICLO 3 ===
+[frontend] TypeScript
+[backend] TypeScript
+
+> base-api-crud-pi-senac-2025@1.0.0 typecheck
+> tsc -p tsconfig.json --noEmit
+
+[backend] Build
+
+> base-api-crud-pi-senac-2025@1.0.0 build
+> NODE_ENV=production tsc -p tsconfig.json && tsc-alias -p tsconfig.json && npm run copy:swagger
+
+
+> base-api-crud-pi-senac-2025@1.0.0 copy:swagger
+> copyfiles -u 2 "src/docs/**/*" dist/docs
+
+[contratos] Frontend x backend
+FRONT_CALLS 39
+BACK_ROUTES 53
+CONTRACTS_OK
+[api] 48 endpoints
+SMOKE_OK 48 endpoints
+[swagger] Parse
+SWAGGER_OK 20 paths
+CICLO_3_OK

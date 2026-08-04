@@ -1,9 +1,3 @@
 import Adicionais from "@/models/adicionais-model";
-import { CreateAdicionalDTO } from "@/types/Adicionais";
-
-export class AdicionaisService {
-
-    async criarAdicional(novaoAdicional: CreateAdicionalDTO) : Promise<Adicionais> {
-        return await Adicionais.create(novaoAdicional)
-    }
-}
+export class AdicionaisService { async listar(){return Adicionais.findAll({order:[["nomeAdicional","ASC"]]});} async buscar(id:number){const a=await Adicionais.findByPk(id);if(!a)throw new Error("Adicional não encontrado.");return a;} async criarAdicional(d:any){return Adicionais.create({nomeAdicional:d.nomeAdicional.trim(),valor:d.valor,disponivel:d.disponivel??true});} async atualizar(id:number,d:any){const a=await this.buscar(id);await a.update(d);return a;} async excluir(id:number){const a=await this.buscar(id);await a.destroy();} }
+export default new AdicionaisService();

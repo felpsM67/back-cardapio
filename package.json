@@ -18,7 +18,8 @@
     "test:unit": "npm test -- --watch -c jest-unit-config.ts",
     "test:integration": "npm test -- --watch -c jest-integration-config.js",
     "test:staged": "npm test -- --findRelatedTests",
-    "test:ci": "npm test -- --coverage"
+    "test:ci": "npm test -- --coverage",
+    "test:smoke": "node -r ts-node/register -r tsconfig-paths/register scripts/smoke-api.js"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",

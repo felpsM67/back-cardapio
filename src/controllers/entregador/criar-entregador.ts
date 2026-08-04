@@ -6,8 +6,11 @@ export class CriarEntregadorController implements Controller {
     async handle(httpRequest: HttpRequest): Promise<HttpResponse> {
         try {
             const entregadorService = new EntregadorService();
-            const enntregadorCriado = await entregadorService.criarEntregador(httpRequest.body);
-            return created(enntregadorCriado); 
+            const entregadorCriado =
+  await entregadorService.criar(
+    httpRequest.body,
+  );
+            return created(entregadorCriado); 
         } catch ( error: any) {
             return serverError(error)
         }

@@ -1,0 +1,1 @@
+import {Router} from "express";import adaptRoute from "@/adapters/express-route-adapter";import C from "@/controllers/pedido/criar";export default(r:Router):void=>{r.post("/pedidos",adaptRoute(new C()));};

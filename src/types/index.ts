@@ -9,5 +9,3 @@ export * from "./pedidos";
 export * from "./perfis";
 export * from "./pratos";
 export * from "./usuarios";
-export * from "./categorias"
-export * from "./cargos";

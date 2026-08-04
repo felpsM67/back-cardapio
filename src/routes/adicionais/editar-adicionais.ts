@@ -6,8 +6,8 @@ import { authMiddleware, authorizeRoles } from "@/middlewares";
 export default (router: Router): void => {
   router.put(
     "/adicionais/:id",
-    authMiddleware,
-    authorizeRoles(["Gerente"]),
+    // authMiddleware,
+    // authorizeRoles(["Gerente"]),
     adaptRoute(new EditarAdicioanisController())
   );
 };

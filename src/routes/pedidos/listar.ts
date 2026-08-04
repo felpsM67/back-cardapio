@@ -1,0 +1,1 @@
+import {Router} from "express";import adaptRoute from "@/adapters/express-route-adapter";import C from "@/controllers/pedido/listar";import {authMiddleware,authorizeRoles} from "@/middlewares";export default(r:Router):void=>{r.get("/pedidos",authMiddleware,authorizeRoles(["Gerente","Caixa","Entregador"]),adaptRoute(new C()));};

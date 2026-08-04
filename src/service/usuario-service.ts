@@ -1,158 +1,70 @@
-import sequelize from "../database";
-import { Role } from "../enums/role";
-import { Encrypter } from "../interfaces";
-import Cliente from "../models/cliente-model";
-import Funcionario from "../models/funcionario-model";
-import Gerente from "../models/gerente-model";
-import Entregador from "../models/entregador-model";
-import User from "../models/user-model";
-import { CreateUserDTO, ResponseCreateUserDto } from "../types";
+import sequelize from "@/database";
+import { Encrypter } from "@/interfaces";
+import Cargo from "@/models/cargo-model";
+import Cliente from "@/models/cliente-model";
+import Funcionario from "@/models/funcionario-model";
+import Gerente from "@/models/gerente-model";
+import User from "@/models/user-model";
+import { CreateUserDTO, ResponseCreateUserDto } from "@/types";
 
 export class UsuarioService {
-  private readonly encrypter: Encrypter;
-  public constructor(encrypter: Encrypter) {
-    this.encrypter = encrypter;
-  }
+  constructor(private readonly encrypter: Encrypter) {}
+
   async deletarUsuario(id: number): Promise<boolean> {
-    const result = sequelize.transaction(async (t) => {
-      const perfil = await this.__buscarPerfilPorUserId(id);
-      if (!perfil) {
-        return false;
-      }
-      const user = await User.findByPk(id);
-      if (!user) {
-        return false;
-      }
-      await perfil.destroy({ transaction: t });
-      await user.destroy({ transaction: t });
+    return sequelize.transaction(async (transaction) => {
+      const user = await User.findByPk(id, { transaction });
+      if (!user) return false;
+      await Cliente.destroy({ where: { userId: id }, transaction });
+      await Funcionario.destroy({ where: { userId: id }, transaction });
+      await Gerente.destroy({ where: { userId: id }, transaction });
+      await user.destroy({ transaction });
       return true;
     });
-    return result;
   }
 
-  async buscarUsuarioPorId(id: number): Promise<User | null> {
-    return await User.findByPk(id);
-  }
+  async buscarUsuarioPorId(id: number) { return User.findByPk(id, { attributes: { exclude: ["senha"] } }); }
+  async buscarPorEmail(email: string) { return User.findOne({ where: { email } }); }
+  async buscaTodosUsuarios() { return User.findAll({ attributes: { exclude: ["senha"] } }); }
 
-  async buscarPorEmail(email: string): Promise<User | null> {
-    return await User.findOne({ where: { email } });
-  }
-
-  async buscaTodosUsuarios(): Promise<User[]> {
-    return (await User.findAll()).map((user) => user?.toJSON());
-  }
-
-  async atualizarUsuario(
-    id: number,
-    { nome, email, senha }: { nome?: string; email?: string; senha?: string }
-  ): Promise<User | null> {
+  async atualizarUsuario(id: number, dados: { nome?: string; email?: string; senha?: string }) {
     const user = await User.findByPk(id);
-    const newUser = { ...user?.toJSON() };
-    if (!user) {
-      return null;
-    }
-    const senhaCriptografada = senha
-      ? await this.encrypter.hash(senha)
-      : user.senha;
-    newUser.nome = nome || newUser.nome;
-    newUser.email = email || newUser.email;
-    newUser.senha = senha ? senhaCriptografada : newUser.senha;
-    const userAtualizado = await sequelize.transaction(async (t) => {
-      const perfil = await this.__buscarPerfilPorUserId(id);
-      if (perfil && nome) {
-        await perfil.update({ nome }, { transaction: t });
-      }
-      return await user.update(newUser, { transaction: t });
-    });
-    return userAtualizado.toJSON();
+    if (!user) return null;
+    const update: any = {};
+    if (dados.nome) update.nome = dados.nome;
+    if (dados.email) update.email = dados.email.toLowerCase();
+    if (dados.senha) update.senha = await this.encrypter.hash(dados.senha);
+    await user.update(update);
+    await Cliente.update({ nome: dados.nome }, { where: { userId: id } });
+    await Funcionario.update({ nome: dados.nome }, { where: { userId: id } });
+    await Gerente.update({ nome: dados.nome }, { where: { userId: id } });
+    return user;
   }
 
-  async criarUsuario(
-    dadosUsuario: CreateUserDTO
-  ): Promise<ResponseCreateUserDto> {
-    const { nome, email, senha, role } = dadosUsuario;
-    const senhaCriptografada = await this.encrypter.hash(senha);
-
-    const usuario = await User.create({
-      nome,
-      email,
-      senha: senhaCriptografada,
-      role,
+  async criarUsuario(dados: CreateUserDTO): Promise<ResponseCreateUserDto> {
+    const exists = await User.findOne({ where: { email: dados.email.toLowerCase() } });
+    if (exists) throw new Error("E-mail já cadastrado.");
+    return sequelize.transaction(async (transaction) => {
+      const senha = await this.encrypter.hash(dados.senha);
+      const role = dados.role === "Entregador" ? "Funcionario" : dados.role;
+      const user = await User.create({ nome: dados.nome, email: dados.email.toLowerCase(), senha, role }, { transaction });
+      if (role === "Cliente") {
+        await Cliente.create({ nome: dados.nome, telefone: dados.telefone, endereco: null, userId: user.id }, { transaction });
+      } else if (role === "Gerente") {
+        await Gerente.create({ nome: dados.nome, telefone: dados.telefone, userId: user.id }, { transaction });
+      } else {
+        const [cargo] = await Cargo.findOrCreate({ where: { nome: "Caixa" }, defaults: { nome: "Caixa", descricao: "Atendimento de pedidos", permissoes: ["view_orders", "manage_orders"], ativo: true }, transaction });
+        await Funcionario.create({ nome: dados.nome, telefone: dados.telefone ?? null, ativo: true, userId: user.id, cargoId: cargo.id }, { transaction });
+      }
+      return { id: user.id, nome: user.nome, email: user.email, role: user.role, telefone: dados.telefone };
     });
-    await this.__criarPerfil({ userId: usuario.id, role, nome, telefone: dadosUsuario?.telefone });
-    await User.sync();
-    const usuarioCriado = await User.findByPk(usuario.id);
-    if(!usuarioCriado) {
-      throw new Error("Erro ao criar usuário");
-    }
-    return {
-      id: usuarioCriado?.id,
-      nome: usuarioCriado?.nome,
-      email: usuarioCriado.email,
-      role: usuarioCriado?.role,
-      telefone: dadosUsuario.telefone,
-    };
-
   }
 
   async __buscarPerfilPorUserId(userId: number) {
     const user = await User.findByPk(userId);
-    if (!user) {
-      return null;
-    }
-    if (user.role === "Funcionario") {
-      return Funcionario.findOne({
-        where: { userId },
-        include: [{ model: User, as: "user" }],
-      });
-    } else if (user.role === "Cliente") {
-      return Cliente.findOne({
-        where: { userId },
-        include: [{ model: User, as: "user" }],
-      });
-    } else if (user.role === "Gerente") {
-      return Gerente.findOne({
-        where: { userId },
-        include: [{ model: User, as: "user" }],
-      });
-    } else if (user.role === "Entregador") {
-      return Entregador.findOne({ where: { userId } });
-    }
-    return null;
+    if (!user) return null;
+    if (user.role === "Cliente") return Cliente.findOne({ where: { userId }, include: [{ model: User, as: "user" }] });
+    if (user.role === "Gerente") return Gerente.findOne({ where: { userId }, include: [{ model: User, as: "user" }] });
+    return Funcionario.findOne({ where: { userId }, include: [{ model: User, as: "user" }, { model: Cargo, as: "cargo" }] });
   }
-
-  async __criarPerfil({
-    userId,
-    role,
-    nome,
-    telefone,
-  }: {
-    userId: number;
-    role: string;
-    nome: string;
-    telefone?: string;
-  }) {
-    if (role === Role.CLIENTE) {
-      await Cliente.create({
-        nome,
-        userId,
-        telefone,
-      });
-    } else if (role === Role.FUNCIONARIO) {
-      await Funcionario.create({
-        nome,
-        userId,
-      });
-    } else if (role === Role.GERENTE) {
-      await Gerente.create({
-        nome,
-        userId,
-      });
-    }
-  }
-
-  async validarUsuarioExistente(id: number): Promise<boolean> {
-    const user = await User.findByPk(id);
-    return !!user;
-  }
+  async validarUsuarioExistente(id: number) { return Boolean(await User.findByPk(id)); }
 }

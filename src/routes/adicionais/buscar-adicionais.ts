@@ -6,7 +6,7 @@ import { authMiddleware } from "@/middlewares";
 export default (router: Router): void => {
   router.get(
     "/adicionais/:id",
-    authMiddleware,
+ 
     adaptRoute(new ListarAdicionaisController())
   );
 };

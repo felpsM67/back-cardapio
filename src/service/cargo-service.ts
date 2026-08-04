@@ -1,4 +1,8 @@
+import { Op } from "sequelize";
+
 import Cargo from "@/models/cargo-model";
+import Funcionario from "@/models/funcionario-model";
+
 import type {
   CreateCargoDTO,
   UpdateCargoDTO,
@@ -30,6 +34,10 @@ class CargoService {
   async criar(dados: CreateCargoDTO): Promise<Cargo> {
     const nome = dados.nome.trim();
 
+    if (!nome) {
+      throw new Error("O nome do cargo é obrigatório.");
+    }
+
     const cargoExistente = await Cargo.findOne({
       where: {
         nome,
@@ -54,17 +62,25 @@ class CargoService {
   ): Promise<Cargo> {
     const cargo = await this.buscarPorId(id);
 
-    if (
-      dados.nome !== undefined &&
-      dados.nome.trim() !== cargo.nome
-    ) {
+    let nome = cargo.nome;
+
+    if (dados.nome !== undefined) {
+      nome = dados.nome.trim();
+
+      if (!nome) {
+        throw new Error("O nome do cargo é obrigatório.");
+      }
+
       const cargoExistente = await Cargo.findOne({
         where: {
-          nome: dados.nome.trim(),
+          nome,
+          id: {
+            [Op.ne]: id,
+          },
         },
       });
 
-      if (cargoExistente && cargoExistente.id !== id) {
+      if (cargoExistente) {
         throw new Error(
           "Já existe outro cargo com este nome.",
         );
@@ -72,10 +88,7 @@ class CargoService {
     }
 
     await cargo.update({
-      nome:
-        dados.nome !== undefined
-          ? dados.nome.trim()
-          : cargo.nome,
+      nome,
 
       descricao:
         dados.descricao !== undefined
@@ -102,15 +115,28 @@ class CargoService {
   ): Promise<Cargo> {
     const cargo = await this.buscarPorId(id);
 
-    cargo.ativo = ativo;
-
-    await cargo.save();
+    await cargo.update({
+      ativo,
+    });
 
     return cargo;
   }
 
   async excluir(id: number): Promise<void> {
     const cargo = await this.buscarPorId(id);
+
+    const funcionariosVinculados =
+      await Funcionario.count({
+        where: {
+          cargoId: id,
+        },
+      });
+
+    if (funcionariosVinculados > 0) {
+      throw new Error(
+        "Não é possível excluir um cargo vinculado a funcionários.",
+      );
+    }
 
     await cargo.destroy();
   }

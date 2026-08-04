@@ -1,0 +1,1 @@
+import {Router} from "express";import adaptRoute from "@/adapters/express-route-adapter";import C from "@/controllers/configuracoes/obter";export default(r:Router):void=>{r.get("/configuracoes",adaptRoute(new C()));};

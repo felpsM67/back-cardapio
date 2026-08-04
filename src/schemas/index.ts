@@ -1,6 +1,5 @@
 import * as z from "zod";
 import { StatusPedido } from "@/enums/status-pedido";
-import { PERMISSOES_CARGO } from "@/enums/permissao";
 
 export const createUserSchema = z.object({
   nome: z
@@ -186,20 +185,42 @@ export const createClienteSchema = z.object({
 
 export const createFuncionarioSchema = z.object({
   nome: z
-    .string({ error: "O nome do funcionário é obrigatório." })
-    .min(3, { error: "O nome do funcionário deve ter no mínimo 3 caracteres" })
-    .max(30, {
-      error: "O nome do funcionário deve ter no máximo 30 caracteres",
+    .string({
+      error: "O nome do funcionário é obrigatório.",
+    })
+    .min(3, {
+      error: "O nome deve ter no mínimo 3 caracteres.",
+    })
+    .max(100, {
+      error: "O nome deve ter no máximo 100 caracteres.",
     }),
+
   telefone: z
-    .string({ error: "O telefone é obrigatório." })
-    .min(10, { error: "O telefone deve ter no mínimo 10 caracteres" })
-    .max(15, { error: "O telefone deve ter no máximo 15 caracteres" }),
-  cargo: z
-    .string({ error: "O cargo é obrigatório." })
-    .min(3, { error: "O cargo deve ter no mínimo 3 caracteres" })
-    .max(30, { error: "O cargo deve ter no máximo 30 caracteres" }),
-  userId: z.number({ error: "O ID do usuário é obrigatório." }),
+    .string({
+      error: "O telefone é obrigatório.",
+    })
+    .min(10, {
+      error: "O telefone deve ter no mínimo 10 caracteres.",
+    })
+    .max(20, {
+      error: "O telefone deve ter no máximo 20 caracteres.",
+    }),
+
+  userId: z
+    .number({
+      error: "O ID do usuário é obrigatório.",
+    })
+    .int()
+    .positive(),
+
+  cargoId: z
+    .number({
+      error: "O cargo é obrigatório.",
+    })
+    .int()
+    .positive(),
+
+  ativo: z.boolean().optional().default(true),
 });
 
 export const createGerenteSchema = z.object({
@@ -238,22 +259,34 @@ export const updateClienteSchema = z.object({
 
 export const updateFuncionarioSchema = z.object({
   nome: z
-    .string({ error: "O nome do funcionário é obrigatório." })
-    .min(3, { error: "O nome do funcionário deve ter no mínimo 3 caracteres" })
-    .max(30, {
-      error: "O nome do funcionário deve ter no máximo 30 caracteres",
+    .string()
+    .min(3, {
+      error: "O nome deve ter no mínimo 3 caracteres.",
+    })
+    .max(100, {
+      error: "O nome deve ter no máximo 100 caracteres.",
     })
     .optional(),
+
   telefone: z
-    .string({ error: "O telefone é obrigatório." })
-    .min(10, { error: "O telefone deve ter no mínimo 10 caracteres" })
-    .max(15, { error: "O telefone deve ter no máximo 15 caracteres" })
+    .string()
+    .min(10, {
+      error: "O telefone deve ter no mínimo 10 caracteres.",
+    })
+    .max(20, {
+      error: "O telefone deve ter no máximo 20 caracteres.",
+    })
     .optional(),
-  cargo: z
-    .string({ error: "O cargo é obrigatório." })
-    .min(3, { error: "O cargo deve ter no mínimo 3 caracteres" })
-    .max(30, { error: "O cargo deve ter no máximo 30 caracteres" })
+
+  cargoId: z
+    .number({
+      error: "O cargo deve ser um número.",
+    })
+    .int()
+    .positive()
     .optional(),
+
+  ativo: z.boolean().optional(),
 });
 
 export const updateGerenteSchema = z.object({
@@ -321,11 +354,19 @@ export const createEntregadorSchema = z.object({
     .min(10, { error: "O telefone deve ter no mínimo 10 caracteres" })
     .max(15, { error: "O telefone deve ter no máximo 15 caracteres" }),
 
+  documento: z
+    .string({ error: "O documento é obrigatório." })
+    .min(11, { error: "O documento deve ter no mínimo 11 caracteres" })
+    .max(14, { error: "O documento deve ter no máximo 14 caracteres" }),
    placa: z
     .string({ error: "A placa é obrigatória." })
     .min(7, { error: "A placa deve ter no mínimo 7 caracteres" })
     .max(8, { error: "A placa deve ter no máximo 8 caracteres" }),
 
+  veiculos: z
+    .string({ error: "O veículo é obrigatório." })
+    .min(2, { error: "O veículo deve ter no mínimo 2 caracteres" })
+    .max(50, { error: "O veículo deve ter no máximo 50 caracteres" }),
 
   userId: z.number({ error: "O ID do usuário é obrigatório." }),
 
@@ -455,11 +496,7 @@ export const createCargoSchema = z.object({
     .optional(),
 
   permissoes: z
-    .array(
-      z.enum(PERMISSOES_CARGO, {
-        error: "Uma ou mais permissões são inválidas.",
-      }),
-    )
+    .array(z.string())
     .optional()
     .default([]),
 
@@ -471,10 +508,10 @@ export const updateCargoSchema = createCargoSchema
   .refine(
     (dados) => Object.keys(dados).length > 0,
     {
-      message: "Informe pelo menos um campo para atualização.",
+      message:
+        "Informe pelo menos um campo para atualizar o cargo.",
     },
   );
-
 export const alterarStatusCargoSchema = z.object({
   ativo: z.boolean({
     error: "O campo ativo deve ser booleano.",

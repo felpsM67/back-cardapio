@@ -21,34 +21,41 @@ export default class AlterarStatusCargoController
   ): Promise<HttpResponse> {
     try {
       const id = Number(httpRequest.params?.id);
-      const { ativo } = httpRequest.body;
+      const ativo = httpRequest.body?.ativo;
 
       if (!Number.isInteger(id) || id <= 0) {
         return badRequest(
-         new Error ("ID do cargo inválido."),
+          new Error("ID do cargo inválido."),
         );
       }
 
       if (typeof ativo !== "boolean") {
         return badRequest(
-         new Error ("O campo ativo deve ser booleano."),
+          new Error(
+            "O campo ativo deve ser booleano.",
+          ),
         );
       }
 
-      const cargo = await cargoService.alterarStatus(
+      const cargo = await cargoService.atualizar(
         id,
-        ativo,
+        { ativo },
       );
 
       return ok(cargo);
-    } catch (error: any) {
-      if (error.message === "Cargo não encontrado.") {
-        return notFound({
-          error: error.message,
-        });
+    } catch (error: unknown) {
+      const erro =
+        error instanceof Error
+          ? error
+          : new Error(
+              "Erro interno ao alterar o status do cargo.",
+            );
+
+      if (erro.message === "Cargo não encontrado.") {
+        return notFound(erro);
       }
 
-      return serverError(error);
+      return serverError(erro);
     }
   }
 }

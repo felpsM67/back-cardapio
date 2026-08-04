@@ -6,27 +6,10 @@ import setupRoutes from "./routes";
 import { resolveRuntimePath } from "./paths";
 import { ENV } from "./env";
 import { setupErrorHandlers } from "@/middlewares";
-import { configureCatalogAssociations } from "@/models/catalogo-associations";
-
-configureCatalogAssociations();
-
-const app = express();
-
-// Swagger opcional
-if (ENV.SWAGGER_ENABLED) {
-  const swaggerFile = resolveRuntimePath("docs/api/swagger.yaml");
-  const swaggerDocument = YAML.load(swaggerFile);
-  app.get("/", (_req, res) => res.redirect("/api-docs"));
-  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-} else {
-  app.get("/", (_req, res) => res.status(204).end());
-}
-
-// Middlewares **antes** das rotas
-setupMiddlewares(app);
-
-// Rotas
-setupRoutes(app);
-setupErrorHandlers(app);
-
-export default app;
+import { configureAppAssociations } from "@/models/app-associations";
+configureAppAssociations();
+const app=express();
+app.set("etag",false);
+app.use((_req,res,next)=>{res.setHeader("Cache-Control","no-store");next();});
+if(ENV.SWAGGER_ENABLED){const doc=YAML.load(resolveRuntimePath("docs/api/swagger.yaml"));app.get("/",(_req,res)=>res.redirect("/api-docs"));app.use("/api-docs",swaggerUi.serve,swaggerUi.setup(doc));}else app.get("/",(_req,res)=>res.status(204).end());
+setupMiddlewares(app);setupRoutes(app);setupErrorHandlers(app);export default app;

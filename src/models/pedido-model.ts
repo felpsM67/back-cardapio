@@ -1,76 +1,12 @@
-import { DataTypes, Model } from "sequelize";
-
+import { DataTypes, Model, Optional } from "sequelize";
 import sequelize from "@/database";
 import { StatusPedido } from "@/enums/status-pedido";
-import Cliente from "@/models/cliente-model";
-
-export class Pedido extends Model {
-  declare id: number;
-  declare codigo: string;
-  declare clienteId: number;
-  declare total: number;
-  declare status: StatusPedido;
-
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
+interface Attr { id:number; codigo:string; clienteNome:string; clienteTelefone:string; endereco:Record<string,unknown>; pagamento:Record<string,unknown>; subtotal:number; valorFrete:number; desconto:number; total:number; status:StatusPedido; entregadorId:number|null; entregadorNome:string|null; entregueEm:Date|null; canceladoEm:Date|null; motivoCancelamento:string|null; }
+type Creation=Optional<Attr,"id"|"codigo"|"endereco"|"pagamento"|"subtotal"|"valorFrete"|"desconto"|"total"|"status"|"entregadorId"|"entregadorNome"|"entregueEm"|"canceladoEm"|"motivoCancelamento">;
+export class Pedido extends Model<Attr,Creation> implements Attr {
+ declare id:number; declare codigo:string; declare clienteNome:string; declare clienteTelefone:string; declare endereco:Record<string,unknown>; declare pagamento:Record<string,unknown>; declare subtotal:number; declare valorFrete:number; declare desconto:number; declare total:number; declare status:StatusPedido; declare entregadorId:number|null; declare entregadorNome:string|null; declare entregueEm:Date|null; declare canceladoEm:Date|null; declare motivoCancelamento:string|null; declare readonly createdAt:Date; declare readonly updatedAt:Date;
 }
-
-Pedido.init(
-  {
-    id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
-      primaryKey: true,
-    },
-
-    codigo: {
-      type: DataTypes.STRING(50),
-      allowNull: false,
-      unique: true,
-    },
-
-    clienteId: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: "Clientes",
-        key: "id",
-      },
-      onUpdate: "CASCADE",
-      onDelete: "RESTRICT",
-    },
-
-    total: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
-      defaultValue: 0,
-      validate: {
-        min: 0,
-      },
-    },
-
-    status: {
-      type: DataTypes.ENUM(...Object.values(StatusPedido)),
-      allowNull: false,
-      defaultValue: StatusPedido.CRIADO,
-    },
-  },
-  {
-    sequelize,
-    modelName: "Pedido",
-    tableName: "Pedidos",
-    timestamps: true,
-  }
-);
-
-Pedido.belongsTo(Cliente, {
-  foreignKey: "clienteId",
-  as: "cliente",
-});
-
-Cliente.hasMany(Pedido, {
-  foreignKey: "clienteId",
-  as: "pedidos",
-});
-
+Pedido.init({
+ id:{type:DataTypes.INTEGER,autoIncrement:true,primaryKey:true}, codigo:{type:DataTypes.STRING(50),allowNull:false,unique:true}, clienteNome:{type:DataTypes.STRING(120),allowNull:false}, clienteTelefone:{type:DataTypes.STRING(20),allowNull:false}, endereco:{type:DataTypes.JSON,allowNull:false,defaultValue:{}}, pagamento:{type:DataTypes.JSON,allowNull:false,defaultValue:{}}, subtotal:{type:DataTypes.DECIMAL(10,2),allowNull:false,defaultValue:0}, valorFrete:{type:DataTypes.DECIMAL(10,2),allowNull:false,defaultValue:0}, desconto:{type:DataTypes.DECIMAL(10,2),allowNull:false,defaultValue:0}, total:{type:DataTypes.DECIMAL(10,2),allowNull:false,defaultValue:0}, status:{type:DataTypes.ENUM(...Object.values(StatusPedido)),allowNull:false,defaultValue:StatusPedido.PENDENTE}, entregadorId:{type:DataTypes.INTEGER,allowNull:true,references:{model:"Entregadores",key:"id"},onDelete:"SET NULL"}, entregadorNome:{type:DataTypes.STRING(120),allowNull:true}, entregueEm:{type:DataTypes.DATE,allowNull:true}, canceladoEm:{type:DataTypes.DATE,allowNull:true}, motivoCancelamento:{type:DataTypes.TEXT,allowNull:true}
+},{sequelize,modelName:"Pedido",tableName:"Pedidos",timestamps:true});
 export default Pedido;

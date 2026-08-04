@@ -30,10 +30,7 @@ User.init(
       allowNull: false,
     },
     role: {
-      type: DataTypes.ENUM("Gerente",
-       "Funcionario",
-      "Cliente"
-    ),
+      type: DataTypes.ENUM("Gerente", "Funcionario", "Cliente", "Entregador"),
       allowNull: false,
       defaultValue: "Funcionario",
     },

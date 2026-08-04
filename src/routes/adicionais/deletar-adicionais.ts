@@ -6,8 +6,8 @@ import { authMiddleware, authorizeRoles } from "@/middlewares";
 export default (router: Router): void => {
   router.delete(
     "/adicionais/:id",
-    authMiddleware,
-    authorizeRoles(["Gerente"]),
+    // authMiddleware,
+    // authorizeRoles(["Gerente"]),
     adaptRoute(new DeletarAdicionaisController())
   );
 };

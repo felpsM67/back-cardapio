@@ -18,19 +18,17 @@ export class UpdateConfiguracoesController implements Controller {
         httpRequest.body
       );
 
-      const [affectedCount, updatedConfiguracoes] =
-        await this.configuracoesService.atualizarConfiguracoes(
-          Number(id),
-          configuracoesData
-        );
+      const updatedConfiguracoes = await this.configuracoesService.salvar(
+        configuracoesData
+      );
 
-      if (affectedCount === 0) {
+      if (!updatedConfiguracoes) {
         return notFound({
           error: "Configurações não encontradas",
         });
       }
 
-      return ok(updatedConfiguracoes[0]);
+      return ok(updatedConfiguracoes);
     } catch (error: any) {
       return badRequest(error);
     }

@@ -1,0 +1,1 @@
+import {ok,serverError} from "@/helpers/http-helper";import {Controller,HttpRequest,HttpResponse} from "@/protocols";import s from "@/service/pedido-service";export default class C implements Controller{async handle(_r:HttpRequest):Promise<HttpResponse>{try{return ok(await s.listar());}catch(e){return serverError(e);}}}

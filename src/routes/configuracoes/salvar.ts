@@ -1,0 +1,1 @@
+import {Router} from "express";import adaptRoute from "@/adapters/express-route-adapter";import C from "@/controllers/configuracoes/salvar";import {authMiddleware,authorizeRoles} from "@/middlewares";export default(r:Router):void=>{r.put("/configuracoes",authMiddleware,authorizeRoles(["Gerente"]),adaptRoute(new C()));};

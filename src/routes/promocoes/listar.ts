@@ -1,0 +1,1 @@
+import {Router} from "express";import adaptRoute from "@/adapters/express-route-adapter";import Controller from "@/controllers/promocoes/listar";export default(router:Router):void=>{router.get("/promocoes",adaptRoute(new Controller()));};

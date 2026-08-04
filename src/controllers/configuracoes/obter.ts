@@ -1,0 +1,1 @@
+import {ok,serverError} from "@/helpers/http-helper";import {Controller,HttpRequest,HttpResponse} from "@/protocols";import service from "@/service/configuracoes-service";export default class C implements Controller{async handle(_r:HttpRequest):Promise<HttpResponse>{try{return ok(await service.obter());}catch(e){return serverError(e);}}}

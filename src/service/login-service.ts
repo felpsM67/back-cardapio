@@ -1,71 +1,34 @@
-import { Tokenizer } from "../adapters/token-adapter";
-import { Encrypter } from "../interfaces";
-import Cliente from "../models/cliente-model";
-import Funcionario from "../models/funcionario-model";
-import Gerente from "../models/gerente-model";
-import Entregador from "../models/entregador-model";
-import User from "../models/user-model";
-import { LoginDTO } from "../types";
+import { Tokenizer } from "@/adapters/token-adapter";
+import { Encrypter } from "@/interfaces";
+import Cargo from "@/models/cargo-model";
+import Funcionario from "@/models/funcionario-model";
+import User from "@/models/user-model";
+import { LoginDTO } from "@/types";
 
 export class LoginService {
-  private readonly encrypter;
-  private readonly tokenizer;
-  public constructor(encrypter: Encrypter, tokenizer: Tokenizer) {
-    this.encrypter = encrypter;
-    this.tokenizer = tokenizer;
-  }
-  async login({ email, senha }: LoginDTO): Promise<null | number> {
-    const user = await User.findOne({ where: { email } });
-    if (!user) {
-      return null;
-    }
+  constructor(private readonly encrypter: Encrypter, private readonly tokenizer: Tokenizer) {}
 
-    // Comparar a senha recebida com a senha criptografada
-    const senhaEhValida = await this.encrypter.compare(senha, user.senha);
-    if (!senhaEhValida) {
-      return null;
-    }
-    return user.id;
+  async login({ email, senha }: LoginDTO): Promise<User | null> {
+    const user = await User.findOne({ where: { email: email.toLowerCase().trim() } });
+    if (!user || !(await this.encrypter.compare(senha, user.senha))) return null;
+    return user;
   }
 
-  async buscarPerfilPorUserId(
-    userId: number
-  ): Promise<null | Cliente | Funcionario | Gerente | Entregador> {
-    const user = await User.findByPk(userId);
-    if (!user) {
-      return null;
-    }
-    if (user.role === "Funcionario") {
-      return await Funcionario.findOne({
-        where: { userId },
-        include: [{ model: User, as: "user" }],
-      });
-    } else if (user.role === "Cliente") {
-      return await Cliente.findOne({
-        where: { userId },
-        include: [{ model: User, as: "user" }],
-      });
-    } else if (user.role === "Gerente") {
-      return await Gerente.findOne({
-        where: { userId },
-        include: [{ model: User, as: "user" }],
-      });
-    } else if (user.role === "Entregador") {
-      return await Entregador.findOne({
-        where: { userId },
-        include: [{ model: User, as: "user" }],
-      });
-    }
-    return null;
-  }
-
-  gerarTokens(user: User) {
-    const token = this.tokenizer.generateToken({
-      id: user.id,
-      email: user.email,
-      role: user.role,
+  async resolverCargo(user: User): Promise<string> {
+    if (user.role === "Gerente") return "Gerente";
+    if (user.role !== "Funcionario") return user.role;
+    const funcionario = await Funcionario.findOne({
+      where: { userId: user.id },
+      include: [{ model: Cargo, as: "cargo" }],
     });
-    const refreshToken = this.tokenizer.generateRefreshToken({ id: user.id });
-    return { token, refreshToken };
+    return (funcionario as any)?.cargo?.nome ?? "Funcionario";
+  }
+
+  gerarTokens(user: User, role: string) {
+    const payload = { id: user.id, sub: String(user.id), email: user.email, role };
+    return {
+      token: this.tokenizer.generateToken(payload),
+      refreshToken: this.tokenizer.generateRefreshToken({ id: user.id, sub: String(user.id) }),
+    };
   }
 }

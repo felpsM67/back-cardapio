@@ -1,0 +1,1 @@
+import {ok,serverError} from "@/helpers/http-helper";import {Controller,HttpRequest,HttpResponse} from "@/protocols";import entregadorService from "@/service/entregador-service";export default class ListarController implements Controller{async handle(_r:HttpRequest):Promise<HttpResponse>{try{return ok(await entregadorService.listar());}catch(e){return serverError(e);}}}
