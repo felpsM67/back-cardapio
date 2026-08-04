@@ -1,0 +1,8 @@
+/node_modules
+coverage
+dist
+.env
+.env.development
+.env.test
+.env.production
+tsconfig.tsbuildinfo
