@@ -3,6 +3,7 @@ import { StatusPedido } from "@/enums/status-pedido";
 import PedidoItem from "@/models/ItemPedido-model";
 import Pedido from "@/models/pedido-model";
 import Prato from "@/models/prato-model";
+import pedidoWhatsappService from "@/service/pedido-whatsapp-service";
 
 const include = [
   {
@@ -100,7 +101,20 @@ export class PedidoService {
       },
     );
 
-    return this.buscar(id);
+    const novoPedido = await this.buscar(id);
+
+try {
+  await pedidoWhatsappService.enviarConfirmacao(
+    novoPedido,
+  );
+} catch (error) {
+  console.error(
+    "Pedido criado, mas o WhatsApp não foi enviado:",
+    error,
+  );
+}
+
+return novoPedido;
   }
 
   async listar(): Promise<Pedido[]> {

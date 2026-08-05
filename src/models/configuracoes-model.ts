@@ -15,7 +15,7 @@ export class Configuracoes extends Model {
   declare horarioFuncionamento: string;
   declare aberto: boolean;
   declare corPrimaria: string;
-  declare capaUrl: string;
+  declare capaUrl: null;
 
   declare readonly createdAt: Date;
   declare readonly updatedAt: Date;
@@ -41,9 +41,9 @@ Configuracoes.init(
     aberto: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
     corPrimaria: { type: DataTypes.STRING(20), allowNull: false, defaultValue: "#ea580c" },
     capaUrl: {
-  type: DataTypes.STRING(2048),
+  type: DataTypes.TEXT("long"),
   allowNull: true,
-  defaultValue: "",
+
 },
   },
   {
