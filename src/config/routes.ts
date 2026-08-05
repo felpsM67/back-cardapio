@@ -8,7 +8,10 @@ export default (app: Express): void => {
   app.use("/api", router);
 
   const routesDir = resolveRuntimePath("routes");
-  const patterns = process.env.NODE_ENV === "production" ? ['**/*.js'] : ['**/*.js', '**/*.ts'];
+  const patterns =
+  process.env.NODE_ENV === "production"
+    ? ["**/*.{js,cjs,mjs}"]
+    : ["**/*.{js,cjs,mjs,ts}"];
   const files = fg.sync(patterns, { cwd: routesDir, absolute: true });
 
   for (const file of files) {
