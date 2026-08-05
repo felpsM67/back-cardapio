@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import sequelize from "@/database";
 import { StatusPedido } from "@/enums/status-pedido";
 import PedidoItem from "@/models/ItemPedido-model";
@@ -48,10 +50,10 @@ export class PedidoService {
     const subtotal = Number(
       d.itens
         .reduce(
-          (s: number, i: any) =>
-            s +
-            Number(i.precoUnitario) *
-              Number(i.quantidade),
+          (soma: number, item: any) =>
+            soma +
+            Number(item.precoUnitario) *
+              Number(item.quantidade),
           0,
         )
         .toFixed(2),
@@ -59,15 +61,20 @@ export class PedidoService {
 
     const frete = Number(d.valorFrete ?? 0);
     const desconto = Number(d.desconto ?? 0);
+
     const total = Number(
       (subtotal + frete - desconto).toFixed(2),
     );
 
     const id = await sequelize.transaction(
       async (transaction) => {
+        /*
+         * O código temporário é usado porque o ID do pedido
+         * somente existe depois que o registro é criado.
+         */
         const pedido = await Pedido.create(
           {
-            codigo: `PED-${Date.now()}`,
+            codigo: `TEMP-${randomUUID()}`,
             clienteNome: d.clienteNome,
             clienteTelefone: d.clienteTelefone,
             endereco: d.endereco ?? {},
@@ -77,6 +84,25 @@ export class PedidoService {
             desconto,
             total,
             status: StatusPedido.PENDENTE,
+          },
+          {
+            transaction,
+          },
+        );
+
+        /*
+         * Exemplo:
+         * ID 1   -> PED-000001
+         * ID 25  -> PED-000025
+         * ID 387 -> PED-000387
+         */
+        const codigoPedido = `PED-${String(
+          pedido.id,
+        ).padStart(6, "0")}`;
+
+        await pedido.update(
+          {
+            codigo: codigoPedido,
           },
           {
             transaction,
@@ -103,18 +129,18 @@ export class PedidoService {
 
     const novoPedido = await this.buscar(id);
 
-try {
-  await pedidoWhatsappService.enviarConfirmacao(
-    novoPedido,
-  );
-} catch (error) {
-  console.error(
-    "Pedido criado, mas o WhatsApp não foi enviado:",
-    error,
-  );
-}
+    try {
+      await pedidoWhatsappService.enviarConfirmacao(
+        novoPedido,
+      );
+    } catch (error) {
+      console.error(
+        "Pedido criado, mas o WhatsApp não foi enviado:",
+        error,
+      );
+    }
 
-return novoPedido;
+    return novoPedido;
   }
 
   async listar(): Promise<Pedido[]> {
@@ -137,36 +163,65 @@ return novoPedido;
   }
 
   async atualizar(
-    id: number,
-    dados: any,
-  ): Promise<Pedido> {
-    const pedido = await this.buscar(id);
+  id: number,
+  dados: any,
+): Promise<Pedido> {
+  const pedido = await this.buscar(id);
 
-    const update: Record<string, unknown> = {};
+  const statusAnterior = String(
+    pedido.status ?? '',
+  );
 
-    for (const campo of [
-      "status",
-      "entregadorId",
-      "entregadorNome",
-      "motivoCancelamento",
-    ]) {
-      if (dados[campo] !== undefined) {
-        update[campo] = dados[campo];
-      }
+  const update: Record<string, unknown> = {};
+
+  const camposPermitidos = [
+    'status',
+    'entregadorId',
+    'entregadorNome',
+    'motivoCancelamento',
+  ];
+
+  for (const campo of camposPermitidos) {
+    if (dados[campo] !== undefined) {
+      update[campo] = dados[campo];
     }
-
-    if (dados.status === StatusPedido.ENTREGUE) {
-      update.entregueEm = new Date();
-    }
-
-    if (dados.status === StatusPedido.CANCELADO) {
-      update.canceladoEm = new Date();
-    }
-
-    await pedido.update(update);
-
-    return this.buscar(id);
   }
+
+  if (dados.status === StatusPedido.ENTREGUE) {
+    update.entregueEm = new Date();
+  }
+
+  if (dados.status === StatusPedido.CANCELADO) {
+    update.canceladoEm = new Date();
+  }
+
+  await pedido.update(update);
+
+  const pedidoAtualizado = await this.buscar(id);
+
+  const statusAtual = String(
+    pedidoAtualizado.status ?? '',
+  );
+
+  const statusFoiAlterado =
+    dados.status !== undefined &&
+    statusAnterior !== statusAtual;
+
+  if (statusFoiAlterado) {
+    try {
+      await pedidoWhatsappService.enviarAtualizacaoStatus(
+        pedidoAtualizado,
+      );
+    } catch (error) {
+      console.error(
+        'Status atualizado, mas a mensagem do WhatsApp não foi enviada:',
+        error,
+      );
+    }
+  }
+
+  return pedidoAtualizado;
+}
 
   async excluir(id: number): Promise<void> {
     const pedido = await this.buscar(id);
