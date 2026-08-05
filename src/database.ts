@@ -1,4 +1,5 @@
 import { Sequelize } from "sequelize";
+import * as pg from "pg";
 
 import { ENV } from "@/config/env";
 
@@ -19,6 +20,9 @@ const sequelize = isTest
     })
   : new Sequelize(databaseUrl as string, {
       dialect: "postgres",
+
+      // Garante que a Vercel inclua o driver PostgreSQL
+      dialectModule: pg,
 
       logging:
         ENV.NODE_ENV === "development"
