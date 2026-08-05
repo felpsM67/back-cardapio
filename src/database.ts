@@ -7,7 +7,7 @@ const databaseUrl = process.env.DATABASE_URL;
 
 if (!isTest && !databaseUrl) {
   throw new Error(
-    "A variável DATABASE_URL não foi configurada no .env.",
+    "A variável DATABASE_URL não foi configurada.",
   );
 }
 
@@ -33,7 +33,10 @@ const sequelize = isTest
       },
 
       pool: {
-        max: 5,
+        max:
+          ENV.NODE_ENV === "production"
+            ? 1
+            : 5,
         min: 0,
         acquire: 30000,
         idle: 10000,
