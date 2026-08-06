@@ -143,39 +143,34 @@ export default (router: Router): void => {
         const missingVariables: string[] =
           [];
 
-        if (!instanceId) {
-          missingVariables.push(
-            'ZAPI_INSTANCE_ID',
-          );
-        }
-
-        if (!instanceToken) {
-          missingVariables.push(
-            'ZAPI_INSTANCE_TOKEN',
-          );
-        }
-
-        if (!clientToken) {
-          missingVariables.push(
-            'ZAPI_CLIENT_TOKEN',
-          );
-        }
-
-        if (!menuUrl) {
-          missingVariables.push(
-            'MENU_URL',
-          );
-        }
-
         if (
-          missingVariables.length > 0
-        ) {
-          throw new Error(
-            `Variáveis ausentes: ${missingVariables.join(
-              ', ',
-            )}`,
-          );
-        }
+  !instanceId ||
+  !instanceToken ||
+  !clientToken ||
+  !menuUrl
+) {
+  const missingVariables: string[] = [];
+
+  if (!instanceId) {
+    missingVariables.push('ZAPI_INSTANCE_ID');
+  }
+
+  if (!instanceToken) {
+    missingVariables.push('ZAPI_INSTANCE_TOKEN');
+  }
+
+  if (!clientToken) {
+    missingVariables.push('ZAPI_CLIENT_TOKEN');
+  }
+
+  if (!menuUrl) {
+    missingVariables.push('MENU_URL');
+  }
+
+  throw new Error(
+    `Variáveis ausentes: ${missingVariables.join(', ')}`,
+  );
+}
 
         const message = [
           'Olá! 👋',
