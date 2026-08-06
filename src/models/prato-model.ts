@@ -66,7 +66,7 @@ Prato.init(
       allowNull: false,
     },
     imagem: {
-      type: DataTypes.TEXT("long"),
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     valor: {
