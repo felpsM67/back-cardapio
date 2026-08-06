@@ -11,6 +11,7 @@ import listarAdicionais from "../routes/adicionais/listar";
 // Z-API
 import testarZapi from "../routes/api-zap/testar";
 
+
 // Cargos
 import buscarCargo from "../routes/cargos/buscar";
 import criarCargo from "../routes/cargos/criar";
@@ -82,6 +83,8 @@ import deletarUsuario from "../routes/usuarios/deletar-usuario";
 import editarUsuario from "../routes/usuarios/editar-usuario";
 import listarUsuarios from "../routes/usuarios/listar-usuario";
 
+
+import zapiRecebimento from '../routes/webhooks/zapi-recebimento';
 export default function setupRoutes(app: Express): void {
   const router = Router();
 
@@ -97,6 +100,7 @@ export default function setupRoutes(app: Express): void {
 
     // Z-API
     testarZapi,
+    zapiRecebimento,
 
     // Cargos
     buscarCargo,
