@@ -16,6 +16,40 @@ interface ZApiWebhookBody {
   };
 }
 
+const ACTIVATION_WORDS = [
+  'oi',
+  'olá',
+  'ola',
+  'bom dia',
+  'boa tarde',
+  'boa noite',
+  'menu',
+  'cardápio',
+  'cardapio',
+  'pedido',
+  'pedir',
+];
+
+function shouldReplyToMessage(
+  message?: string,
+): boolean {
+  const normalizedMessage = message
+    ?.trim()
+    .toLocaleLowerCase('pt-BR');
+
+  if (!normalizedMessage) {
+    return false;
+  }
+
+  return ACTIVATION_WORDS.some(
+    (word) =>
+      normalizedMessage === word ||
+      normalizedMessage.startsWith(
+        `${word} `,
+      ),
+  );
+}
+
 export default (router: Router): void => {
   router.post(
     '/webhooks/zapi/recebimento/:secret',
@@ -30,15 +64,18 @@ export default (router: Router): void => {
     ): Promise<void> => {
       try {
         const webhookSecret =
-          process.env.ZAPI_WEBHOOK_SECRET;
+          process.env.ZAPI_WEBHOOK_SECRET?.trim();
+
+        const receivedSecret =
+          request.params.secret?.trim();
 
         if (
           !webhookSecret ||
-          request.params.secret !==
-            webhookSecret
+          receivedSecret !== webhookSecret
         ) {
           response.status(401).json({
-            message: 'Webhook não autorizado.',
+            message:
+              'Webhook não autorizado.',
           });
 
           return;
@@ -49,34 +86,12 @@ export default (router: Router): void => {
           fromMe,
           isGroup,
           isNewsletter,
+          text,
         } = request.body;
-        const receivedMessage =
-  request.body.text?.message
-    ?.trim()
-    .toLocaleLowerCase('pt-BR') ?? '';
 
-const greetingWords = [
-  'oi',
-  'olá',
-  'ola',
-  'bom dia',
-  'boa tarde',
-  'boa noite',
-  'menu',
-  'cardápio',
-  'cardapio',
-  'pedido',
-  'pedir',
-];
-
-const shouldReply = greetingWords.some(
-  (word) =>
-    receivedMessage === word ||
-    receivedMessage.startsWith(`${word} `),
-);
         /*
-         * Impede responder:
-         * - mensagens enviadas pela própria loja;
+         * Ignora:
+         * - mensagens enviadas pela loja;
          * - mensagens de grupos;
          * - mensagens de canais;
          * - eventos sem telefone.
@@ -86,36 +101,79 @@ const shouldReply = greetingWords.some(
           isGroup ||
           isNewsletter ||
           !phone
-        ) if (!shouldReply) {
+        ) {
           response.status(200).json({
             received: true,
             ignored: true,
-            reason: 'Mensagem não contém palavra de ativação'
+            reason:
+              'Evento não deve receber resposta automática.',
+          });
+
+          return;
+        }
+
+        const shouldReply =
+          shouldReplyToMessage(
+            text?.message,
+          );
+
+        if (!shouldReply) {
+          response.status(200).json({
+            received: true,
+            ignored: true,
+            reason:
+              'Mensagem sem palavra de ativação.',
           });
 
           return;
         }
 
         const instanceId =
-          process.env.ZAPI_INSTANCE_ID;
+          process.env.ZAPI_INSTANCE_ID?.trim();
 
         const instanceToken =
-          process.env.ZAPI_INSTANCE_TOKEN;
+          process.env.ZAPI_INSTANCE_TOKEN?.trim();
 
         const clientToken =
-          process.env.ZAPI_CLIENT_TOKEN;
+          process.env.ZAPI_CLIENT_TOKEN?.trim();
 
         const menuUrl =
-          process.env.MENU_URL;
+          process.env.MENU_URL?.trim();
+
+        const missingVariables: string[] =
+          [];
+
+        if (!instanceId) {
+          missingVariables.push(
+            'ZAPI_INSTANCE_ID',
+          );
+        }
+
+        if (!instanceToken) {
+          missingVariables.push(
+            'ZAPI_INSTANCE_TOKEN',
+          );
+        }
+
+        if (!clientToken) {
+          missingVariables.push(
+            'ZAPI_CLIENT_TOKEN',
+          );
+        }
+
+        if (!menuUrl) {
+          missingVariables.push(
+            'MENU_URL',
+          );
+        }
 
         if (
-          !instanceId ||
-          !instanceToken ||
-          !clientToken ||
-          !menuUrl
+          missingVariables.length > 0
         ) {
           throw new Error(
-            'Variáveis da Z-API não configuradas.',
+            `Variáveis ausentes: ${missingVariables.join(
+              ', ',
+            )}`,
           );
         }
 
@@ -125,6 +183,7 @@ const shouldReply = greetingWords.some(
           'Bem-vindo ao nosso atendimento.',
           '',
           'Confira o cardápio e faça seu pedido pelo link:',
+          '',
           menuUrl,
         ].join('\n');
 
@@ -154,12 +213,14 @@ const shouldReply = greetingWords.some(
             await zapiResponse.text();
 
           throw new Error(
-            `Erro da Z-API: ${errorBody}`,
+            `Erro da Z-API (${zapiResponse.status}): ${errorBody}`,
           );
         }
 
         const result =
-          await zapiResponse.json();
+          await zapiResponse
+            .json()
+            .catch(() => null);
 
         response.status(200).json({
           received: true,
@@ -173,12 +234,17 @@ const shouldReply = greetingWords.some(
         );
 
         /*
-         * Retornamos 200 para evitar várias
-         * tentativas repetidas do webhook.
+         * Mantém status 200 para impedir
+         * repetições automáticas do webhook.
          */
         response.status(200).json({
           received: true,
           messageSent: false,
+
+          error:
+            error instanceof Error
+              ? error.message
+              : 'Erro desconhecido.',
         });
       }
     },
