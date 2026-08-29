@@ -13,6 +13,9 @@ class PedidoWhatsappService {
   async enviarConfirmacao(
     pedido: any,
   ): Promise<void> {
+    const retirada =
+      pedido.endereco?.tipoEntrega === "RETIRADA";
+
     const itens = Array.isArray(pedido.itens)
       ? pedido.itens
           .map((item: any) => {
@@ -49,7 +52,9 @@ class PedidoWhatsappService {
       "",
       DIVIDER,
       `Subtotal            ${formatCurrency(Number(pedido.subtotal))}`,
-      `Entrega             ${formatCurrency(Number(pedido.valorFrete))}`,
+      retirada
+        ? "Retirada na loja    Grátis"
+        : `Entrega             ${formatCurrency(Number(pedido.valorFrete))}`,
       Number(pedido.desconto) > 0
         ? `Desconto          − ${formatCurrency(Number(pedido.desconto))}`
         : "",

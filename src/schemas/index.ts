@@ -103,26 +103,45 @@ export const pedidoItemSchema = z.object({
     }),
 });
 
-export const createPedidoSchema = z.object({
-  clienteTelefone: z
-    .string({
-      error: "O telefone do cliente é obrigatório.",
-    })
-    .min(10, {
-      error: "O telefone deve ter no mínimo 10 caracteres.",
-    })
-    .max(15, {
-      error: "O telefone deve ter no máximo 15 caracteres.",
-    }),
+export const createPedidoSchema = z
+  .object({
+    clienteTelefone: z
+      .string({
+        error: "O telefone do cliente é obrigatório.",
+      })
+      .min(10, {
+        error: "O telefone deve ter no mínimo 10 caracteres.",
+      })
+      .max(15, {
+        error: "O telefone deve ter no máximo 15 caracteres.",
+      }),
 
-  itens: z
-    .array(pedidoItemSchema, {
-      error: "Os itens do pedido estão incorretos.",
-    })
-    .min(1, {
-      error: "O pedido deve possuir pelo menos um item.",
-    }),
-});
+    tipoEntrega: z
+      .enum(["ENTREGA", "RETIRADA"])
+      .default("ENTREGA"),
+
+    endereco: z
+      .record(z.string(), z.unknown())
+      .nullable()
+      .optional(),
+
+    itens: z
+      .array(pedidoItemSchema, {
+        error: "Os itens do pedido estão incorretos.",
+      })
+      .min(1, {
+        error: "O pedido deve possuir pelo menos um item.",
+      }),
+  })
+  .superRefine((dados, ctx) => {
+    if (dados.tipoEntrega === "ENTREGA" && !dados.endereco) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["endereco"],
+        message: "O endereço é obrigatório para pedidos de entrega.",
+      });
+    }
+  });
 
 export const updatePedidoSchema = z
   .object({

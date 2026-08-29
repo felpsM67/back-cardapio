@@ -47,6 +47,11 @@ export class PedidoService {
   }
 
   async criar(d: any): Promise<Pedido> {
+    const tipoEntrega =
+      d.tipoEntrega === "RETIRADA"
+        ? "RETIRADA"
+        : "ENTREGA";
+
     const subtotal = Number(
       d.itens
         .reduce(
@@ -59,7 +64,10 @@ export class PedidoService {
         .toFixed(2),
     );
 
-    const frete = Number(d.valorFrete ?? 0);
+    const frete =
+      tipoEntrega === "RETIRADA"
+        ? 0
+        : Number(d.valorFrete ?? 0);
     const desconto = Number(d.desconto ?? 0);
 
     const total = Number(
@@ -77,7 +85,10 @@ export class PedidoService {
             codigo: `TEMP-${randomUUID()}`,
             clienteNome: d.clienteNome,
             clienteTelefone: d.clienteTelefone,
-            endereco: d.endereco ?? {},
+            endereco: {
+              ...(d.endereco ?? {}),
+              tipoEntrega,
+            },
             pagamento: d.pagamento ?? {},
             subtotal,
             valorFrete: frete,
