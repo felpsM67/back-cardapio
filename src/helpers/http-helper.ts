@@ -9,3 +9,4 @@ export const notFound=(data:any):HttpResponse=>({statusCode:404,body:bodyOf(data
 export const noContent=():HttpResponse=>({statusCode:204,body:null});
 export const unAuthorized=(data?:any):HttpResponse=>({statusCode:401,body:bodyOf(data)});
 export const forbidden=(data?:any):HttpResponse=>({statusCode:403,body:bodyOf(data)});
+export const conflict=(data:any):HttpResponse=>({statusCode:409,body:bodyOf(data)});
